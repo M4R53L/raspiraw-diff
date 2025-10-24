@@ -708,6 +708,26 @@ struct sensor_regs imx219_stop[] = {
 	{ 0x0100, 0x00 }, // disable streaming
 };
 
+
+// Function to set crop by modifying the mode's registers
+// Assumes cfg->width and cfg->height are the desired output dimensions
+int imx219_set_crop(const struct sensor_def *sensor, struct mode_def *mode, const struct raspiraw_crop *cfg) {
+	 //Update mode registers for new width and height
+    if( cfg->width >0){
+	//Set X output size (register 0x016C: width)
+        mode->width = cfg->width;
+        modReg(mode, 0x016C , 0, 3, cfg->width >> 8, EQUAL);
+        modReg(mode, 0x016C +1, 0, 7, cfg->width & 0xFF, EQUAL);
+    }
+    if( cfg->height >0){
+	//Set Y output size (register 0x016E: height)
+        mode->height = cfg->height;
+        modReg(mode, 0x016E , 0, 3, cfg->height >> 8, EQUAL);
+        modReg(mode, 0x016E + 1, 0, 7, cfg->height & 0xFF, EQUAL);
+    }
+ return 0; // Success
+}
+
 // ID, exposure, and gain register settings taken from
 // https://android.googlesource.com/kernel/bcm/+/android-bcm-tetra-3.10-lollipop-wear-release/drivers/media/video/imx219.c
 // Flip settings taken from
@@ -738,6 +758,8 @@ struct sensor_def imx219 = {
 
 	.gain_reg = 0x0157,
 	.gain_reg_num_bits = 8, // Only valid up to 230.
+
+    .set_crop = imx219_set_crop, // function pointer to set crop
 };
 
 #endif
